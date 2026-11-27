@@ -1,12 +1,12 @@
 # pco-dl
 
-Download Planning Center Services song attachments from the command line. Practice audio that the song page only streams is saved as MP3.
+Download Planning Center Services attachments from the command line. Give it a song, or a plan to list every song scheduled on that service. Practice audio that the page only streams is saved as MP3.
 
 Files land in your Downloads folder, named `<song>_<filename>`. An example is `Here I Am (ICF SN)_05_Here I Am BASS rehearsal.mp3`.
 
 ## Quickstart
 
-Create a personal access token at <https://api.planningcenteronline.com/oauth/applications>. The account needs access to the song.
+Create a personal access token at <https://api.planningcenteronline.com/oauth/applications>. The account needs access to the song, or to the plan.
 
 ```bash
 export PCO_APP_ID=your-application-id
@@ -14,7 +14,7 @@ export PCO_SECRET=your-secret
 pco-dl 31193598
 ```
 
-A song URL works too. An arrangement URL lists every arrangement of that song.
+A number is a song id. A song URL works too. An arrangement URL lists every arrangement of that song.
 
 ```text
 #  Access      Arrangement  Key  Name
@@ -23,7 +23,23 @@ A song URL works too. An arrangement URL lists every arrangement of that song.
 3  stream-only Default      G    Guide.m4a
 ```
 
-Then type a selection: `1,3-5`, `all`, or Enter to cancel.
+A plan URL lists the arrangement and key selected on that service, plus files stored on each song. The same song scheduled twice is listed once. Items with no song are skipped. Files attached only to the plan, such as an order-of-service PDF, are left out.
+
+```bash
+pco-dl https://services.planningcenteronline.com/plans/89693797
+```
+
+```text
+Sunday Night (89693797)
+November 29, 2026
+
+#  Song               Access       Arrangement  Key  Name
+1  You Stay The Same  download     Default      —    Chart.pdf
+2  You Stay The Same  stream-only  Default      D    Bass rehearsal.wav
+3  Call               download     Song         —    Chart.pdf
+```
+
+Each file is saved under its own song name. Then type a selection: `1,3-5`, `all`, or Enter to cancel.
 
 Links such as Spotify are printed. They are not saved. PDFs and other non-audio files keep their original format.
 
@@ -39,7 +55,7 @@ mise run build
 
 Release tags `vMAJOR.MINOR.PATCH` publish darwin, linux, and windows binaries (amd64 and arm64) plus `SHA256SUMS`. Check the checksum before you run a downloaded binary.
 
-An MP3 is copied as-is. AAC, M4A, and HLS playlists need ffmpeg on `PATH`, with `libmp3lame`. Install it yourself:
+An MP3 is copied as-is. WAV, AAC, M4A, and HLS playlists need ffmpeg on `PATH`, with `libmp3lame`. Install it yourself:
 
 ```bash
 # macOS

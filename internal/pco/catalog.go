@@ -22,6 +22,7 @@ type Song struct {
 // File is one attachment on a song, arrangement, or key.
 type File struct {
 	ID               string
+	SongTitle        string
 	Arrangement      string
 	Key              string
 	DisplayName      string
@@ -100,20 +101,28 @@ type attachmentAttrs struct {
 	URL              string `json:"url"`
 }
 
-// FilesForSong loads the song and every attachment on its arrangements and keys.
-// Attachments stored on the song itself are included under the arrangement name "Song".
-func (c *Client) FilesForSong(ctx context.Context, songID string) (Song, []File, error) {
+func (c *Client) songByID(ctx context.Context, songID string) (Song, error) {
 	res, err := c.getResource(ctx, "/services/v2/songs/"+url.PathEscape(songID))
 	if err != nil {
-		return Song{}, nil, err
+		return Song{}, err
 	}
 	attrs, err := decodeAttrs[songAttrs](res.Attributes)
 	if err != nil {
-		return Song{}, nil, fmt.Errorf("decode song: %w", err)
+		return Song{}, fmt.Errorf("decode song: %w", err)
 	}
 	song := Song{ID: res.ID, Title: attrs.Title, Author: attrs.Author}
 	if song.Title == "" {
 		song.Title = "Song " + song.ID
+	}
+	return song, nil
+}
+
+// FilesForSong loads the song and every attachment on its arrangements and keys.
+// Attachments stored on the song itself are included under the arrangement name "Song".
+func (c *Client) FilesForSong(ctx context.Context, songID string) (Song, []File, error) {
+	song, err := c.songByID(ctx, songID)
+	if err != nil {
+		return Song{}, nil, err
 	}
 
 	arrs, err := c.list(ctx, "/services/v2/songs/"+url.PathEscape(songID)+"/arrangements")
@@ -185,7 +194,11 @@ func (c *Client) FilesForSong(ctx context.Context, songID string) (Song, []File,
 			head = append(head, f)
 		}
 	}
-	return song, append(head, files...), nil
+	out := append(head, files...)
+	for i := range out {
+		out[i].SongTitle = song.Title
+	}
+	return song, out, nil
 }
 
 func (c *Client) attachments(ctx context.Context, path, arrangement, key string) ([]File, error) {

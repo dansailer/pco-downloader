@@ -53,8 +53,30 @@ func New(appID, secret string) *Client {
 }
 
 type resource struct {
-	ID         string          `json:"id"`
-	Attributes json.RawMessage `json:"attributes"`
+	ID            string          `json:"id"`
+	Attributes    json.RawMessage `json:"attributes"`
+	Relationships map[string]struct {
+		Data json.RawMessage `json:"data"`
+	} `json:"relationships"`
+}
+
+// toOne reads a to-one relationship id. A null or empty relationship is not an id.
+func (r resource) toOne(name string) (string, bool) {
+	env, ok := r.Relationships[name]
+	if !ok {
+		return "", false
+	}
+	raw := bytes.TrimSpace(env.Data)
+	if len(raw) == 0 || string(raw) == "null" {
+		return "", false
+	}
+	var ref struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(raw, &ref); err != nil || ref.ID == "" {
+		return "", false
+	}
+	return ref.ID, true
 }
 
 type listEnvelope struct {

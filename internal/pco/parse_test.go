@@ -30,6 +30,29 @@ func TestParseSongID(t *testing.T) {
 	}
 }
 
+func TestParseRefPlan(t *testing.T) {
+	cases := []struct {
+		in   string
+		kind RefKind
+		id   string
+	}{
+		{"31193598", RefSong, "31193598"},
+		{"https://services.planningcenteronline.com/songs/31193598/arrangements/36605324", RefSong, "31193598"},
+		{"https://services.planningcenteronline.com/plans/89693797", RefPlan, "89693797"},
+		{"https://services.planningcenteronline.com/plans/89693797/", RefPlan, "89693797"},
+		{"services.planningcenteronline.com/plans/89693797?x=1", RefPlan, "89693797"},
+	}
+	for _, tc := range cases {
+		got, err := ParseRef(tc.in)
+		if err != nil {
+			t.Fatalf("ParseRef(%q): %v", tc.in, err)
+		}
+		if got.Kind != tc.kind || got.ID != tc.id {
+			t.Fatalf("ParseRef(%q) = %+v", tc.in, got)
+		}
+	}
+}
+
 func TestParseSongIDRejects(t *testing.T) {
 	for _, in := range []string{
 		"",
