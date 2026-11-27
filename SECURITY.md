@@ -14,7 +14,9 @@ File URLs must be `https`, unless the configured API host is itself local. Redir
 
 A proxy set in `HTTPS_PROXY`, `HTTP_PROXY`, or `ALL_PROXY` is dialed as configured. Other connections are not.
 
-Each download stops at 512 MiB. The output name is one file in the destination directory: the song title, `_`, and the file name, with path separators removed. An existing symlink is not followed. ffmpeg reads a temp file only, with protocols limited to `file`, `pipe`, and `crypto`. The file it writes is an absolute path, so a name that starts with `-` is not another ffmpeg option.
+Each download stops at 512 MiB. The output name is one file in the destination directory: the song title, `_`, and the file name, with path separators removed. An existing symlink is not followed. ffmpeg reads a temp file only, with protocols limited to `file`, `pipe`, and `crypto`, when it converts a file this command already fetched. The file it writes is an absolute path, so a name that starts with `-` is not another ffmpeg option.
+
+A YouTube attachment is a separate ffmpeg run, and yt-dlp when that run cannot fetch the video. The program passes `https://www.youtube.com/watch?v=` plus the video id, not the original link. yt-dlp is started with `--ignore-config`, so a config file cannot add options. Neither program receives the token or the proxy variables.
 
 ## Releases
 

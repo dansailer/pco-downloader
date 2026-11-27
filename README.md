@@ -21,6 +21,7 @@ A number is a song id. A song URL works too. An arrangement URL lists every arra
 1  download    Default      —    Chart.pdf
 2  download    Default      G    Bass rehearsal.mp3
 3  stream-only Default      G    Guide.m4a
+4  youtube     Default      —    YouTube
 ```
 
 A plan URL lists the arrangement and key selected on that service, plus files stored on each song. The same song scheduled twice is listed once. Items with no song are skipped. Files attached only to the plan, such as an order-of-service PDF, are left out.
@@ -41,7 +42,7 @@ November 29, 2026
 
 Each file is saved under its own song name. Then type a selection: `1,3-5`, `all`, or Enter to cancel.
 
-Links such as Spotify are printed. They are not saved. PDFs and other non-audio files keep their original format.
+A row marked `youtube` is a YouTube attachment. Planning Center often names that file `YouTube`. It is saved as MP3, for example `I Thank God_YouTube.mp3`. ffmpeg is tried first. When ffmpeg cannot fetch the video, yt-dlp is used. The watch page itself is not saved. Other links, such as Spotify, are printed and are not saved. PDFs and other non-audio files keep their original format.
 
 ## Install
 
@@ -55,17 +56,17 @@ mise run build
 
 Release tags `vMAJOR.MINOR.PATCH` publish darwin, linux, and windows binaries (amd64 and arm64) plus `SHA256SUMS`. Check the checksum before you run a downloaded binary.
 
-An MP3 is copied as-is. WAV, AAC, M4A, and HLS playlists need ffmpeg on `PATH`, with `libmp3lame`. Install it yourself:
+An MP3 is copied as-is. WAV, AAC, M4A, and HLS playlists need ffmpeg on `PATH`, with `libmp3lame`. A YouTube attachment uses ffmpeg, then yt-dlp when ffmpeg cannot fetch the video. Install them yourself:
 
 ```bash
 # macOS
-brew install ffmpeg
+brew install ffmpeg yt-dlp
 
 # Debian, Ubuntu
-sudo apt install ffmpeg
+sudo apt install ffmpeg yt-dlp
 
 # Windows
-winget install Gyan.FFmpeg
+winget install Gyan.FFmpeg yt-dlp.yt-dlp
 ```
 
 ## Credentials

@@ -52,9 +52,13 @@ func (f File) Label() string {
 
 // Access describes how Planning Center exposes the attachment.
 // "link" is a remote URL with no stored file.
+// "youtube" is a YouTube link whose audio can be saved as MP3.
 // "stream-only" is audio whose song-page download is turned off.
 // "download" is anything else this command will request through the API.
 func (f File) Access() string {
+	if _, ok := youtubeTarget(f); ok {
+		return "youtube"
+	}
 	if f.Filename == "" && f.Link != "" {
 		return "link"
 	}
@@ -251,6 +255,9 @@ func keyLabel(attrs keyAttrs) string {
 // returned with the file is used instead. MP3 bytes are copied. Other audio
 // and playlists are converted with ffmpeg.
 func (c *Client) Download(ctx context.Context, f File, dest string) error {
+	if page, ok := youtubeTarget(f); ok {
+		return c.saveYouTube(ctx, page, dest)
+	}
 	if f.Access() == "link" {
 		return fmt.Errorf("%s is a link, not a stored file", f.Label())
 	}
@@ -276,6 +283,9 @@ func (c *Client) Download(ctx context.Context, f File, dest string) error {
 }
 
 func (c *Client) saveFetched(ctx context.Context, f File, fileURL, dest string) error {
+	if id, ok := youtubeVideoID(fileURL); ok && !storedMedia(f.Filename) {
+		return c.saveYouTube(ctx, youtubePage(id), dest)
+	}
 	if isAudio(f.ContentType, f.Filename) {
 		return c.saveAudio(ctx, fileURL, dest)
 	}
