@@ -22,6 +22,6 @@ Workflows pin every action to a commit SHA. CI can read the repository. Release 
 
 Pinned actions are checked by `jactionlint update`. A newer release is reported only after it is seven days old. ffmpeg is not part of the release. Install it from your package manager when a stream is not already MP3.
 
-There is no license file yet. The repository is public. Do not treat the source as reusable until a license is added.
+The source is under the MIT license. See [LICENSE](LICENSE).
 
 Report a vulnerability through a [private GitHub security advisory](https://github.com/dansailer/pco-downloader/security/advisories/new).

@@ -81,3 +81,7 @@ git push origin v0.1.0
 ```
 
 The tag must be `vMAJOR.MINOR.PATCH`. The release workflow builds darwin, linux, and windows for amd64 and arm64 with `CGO_ENABLED=0`, writes `SHA256SUMS`, and publishes those files. It does not create a tag that is not already on the repository.
+
+## License
+
+[MIT](LICENSE)
