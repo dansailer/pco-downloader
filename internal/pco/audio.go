@@ -413,15 +413,8 @@ func ffmpegToMP3(ctx context.Context, src, dest string) error {
 		_ = os.Remove(tmp)
 		return err
 	}
-	cmd := exec.CommandContext(ctx, "ffmpeg", //nolint:gosec // G204: flags are fixed; the path passed localMediaPath
-		"-nostdin", "-y", "-hide_banner", "-loglevel", "error",
-		"-protocol_whitelist", "file,pipe,crypto",
-		"-i", "file:"+filepath.ToSlash(abs),
-		"-vn",
-		"-c:a", "libmp3lame",
-		"-q:a", "2",
-		tmp,
-	)
+	// -f mp3 is required. The temp name ends in .part, so ffmpeg cannot infer MP3 from it.
+	cmd := exec.CommandContext(ctx, "ffmpeg", ffmpegArgs(abs, tmp)...) //nolint:gosec // G204: flags are fixed; the path passed localMediaPath
 	cmd.Env = scrubSecrets(os.Environ())
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -444,6 +437,19 @@ func ffmpegToMP3(ctx context.Context, src, dest string) error {
 		return err
 	}
 	return nil
+}
+
+func ffmpegArgs(input, output string) []string {
+	return []string{
+		"-nostdin", "-y", "-hide_banner", "-loglevel", "error",
+		"-protocol_whitelist", "file,pipe,crypto",
+		"-i", "file:" + filepath.ToSlash(input),
+		"-vn",
+		"-c:a", "libmp3lame",
+		"-q:a", "2",
+		"-f", "mp3",
+		output,
+	}
 }
 
 // ffmpegOutput is an absolute path. A relative name that starts with "-"
