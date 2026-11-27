@@ -39,6 +39,10 @@ type Client struct {
 	// transcode writes an MP3 to dest from a local temp file.
 	// Nil uses ffmpeg, which is not given a network URL.
 	transcode func(ctx context.Context, src, dest string) error
+
+	// execCmd runs ffmpeg or yt-dlp. Nil uses the program on PATH.
+	// YouTube is the only caller. The transcode path does not use it.
+	execCmd func(ctx context.Context, name string, args []string) ([]byte, error)
 }
 
 // New returns a client for the public Planning Center API.

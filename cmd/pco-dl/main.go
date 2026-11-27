@@ -49,6 +49,8 @@ Authentication:
 Files are saved in your Downloads folder as "<song>_<filename>".
 Audio is saved as MP3, including files the song page only streams.
 An MP3 stream is copied. Other audio and playlists are converted with ffmpeg.
+A YouTube link is saved as MP3. ffmpeg is tried first, then yt-dlp.
+Other links, such as Spotify, are printed and not saved.
 Pass -o to choose a different directory.
 
 Flags:
@@ -98,7 +100,7 @@ Flags:
 	}
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintf(os.Stderr, "Saving into %s as \"<song>_<file>\". Audio is MP3, including stream-only files.\n", destRoot)
-	fmt.Fprintln(os.Stderr, "ffmpeg converts a stream that is not already MP3.")
+	fmt.Fprintln(os.Stderr, "ffmpeg converts a stream that is not already MP3. A YouTube link is saved with ffmpeg, or yt-dlp when ffmpeg cannot fetch it.")
 	fmt.Fprint(os.Stderr, "Select files (1,3-5 or all). Enter cancels: ")
 	line, err := readLine(os.Stdin)
 	if err != nil {

@@ -87,6 +87,21 @@ func outputName(f File) string {
 	if name == "" {
 		name = "attachment-" + f.ID
 	}
+	if _, ok := youtubeTarget(f); ok {
+		name = strings.TrimSpace(f.DisplayName)
+		if name == "" {
+			name = strings.TrimSuffix(f.Filename, filepath.Ext(f.Filename))
+		}
+		if strings.TrimSpace(name) == "" {
+			name = "youtube"
+		}
+		name = strings.TrimSuffix(name, filepath.Ext(name))
+		name = strings.TrimSpace(name)
+		if name == "" || name == "." || name == ".." {
+			name = "youtube"
+		}
+		return name + ".mp3"
+	}
 	if !isAudio(f.ContentType, name) {
 		return name
 	}

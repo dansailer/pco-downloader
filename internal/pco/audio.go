@@ -105,6 +105,14 @@ func (c *Client) saveRaw(ctx context.Context, fileURL, dest string) error {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("download HTTP %d", resp.StatusCode)
 	}
+	final := fileURL
+	if resp.Request != nil && resp.Request.URL != nil {
+		final = resp.Request.URL.String()
+	}
+	if id, ok := youtubeVideoID(final); ok {
+		_ = resp.Body.Close()
+		return c.saveYouTube(ctx, youtubePage(id), dest)
+	}
 	return saveStream(dest, resp.Body)
 }
 
