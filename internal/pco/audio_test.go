@@ -179,6 +179,16 @@ func TestAPIAuthedFile(t *testing.T) {
 	}
 }
 
+func TestFFmpegArgsNameTheMP3Format(t *testing.T) {
+	args := ffmpegArgs("/tmp/in.wav", "/tmp/Song_bass.mp3.part")
+	if len(args) < 3 || args[len(args)-3] != "-f" || args[len(args)-2] != "mp3" {
+		t.Fatalf("args = %q", args)
+	}
+	if args[len(args)-1] != "/tmp/Song_bass.mp3.part" {
+		t.Fatalf("output = %s", args[len(args)-1])
+	}
+}
+
 func TestFFmpegOutputIsAbsolute(t *testing.T) {
 	got, err := ffmpegOutput("-hide_banner.mp3")
 	if err != nil {

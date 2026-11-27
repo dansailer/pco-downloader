@@ -11,18 +11,34 @@ import (
 // ErrCancel means the user left the selection prompt without choosing files.
 var ErrCancel = errors.New("cancelled")
 
-// ParseSongID accepts a Services song id or a song page URL.
-// An arrangement URL is accepted and the song id is taken from it.
-func ParseSongID(input string) (string, error) {
+// RefKind says whether the user named a song or one plan.
+type RefKind int
+
+const (
+	// RefSong is a song id or a /songs/{id} URL.
+	RefSong RefKind = iota
+	// RefPlan is a /plans/{id} URL. A bare number is a song id, not a plan id.
+	RefPlan
+)
+
+// Ref is the song or plan the user asked for.
+type Ref struct {
+	Kind RefKind
+	ID   string
+}
+
+// ParseRef accepts a song id, a song page URL, or a plan page URL.
+// An arrangement path under a song still names that song.
+func ParseRef(input string) (Ref, error) {
 	s := strings.TrimSpace(input)
 	if s == "" {
-		return "", errors.New("song id or URL is required")
+		return Ref{}, errors.New("song id, song URL, or plan URL is required")
 	}
 	if id, err := strconv.ParseInt(s, 10, 64); err == nil {
 		if id <= 0 {
-			return "", fmt.Errorf("song id %q is not valid", s)
+			return Ref{}, fmt.Errorf("song id %q is not valid", s)
 		}
-		return s, nil
+		return Ref{Kind: RefSong, ID: s}, nil
 	}
 
 	raw := s
@@ -31,18 +47,35 @@ func ParseSongID(input string) (string, error) {
 	}
 	u, err := url.Parse(raw)
 	if err != nil {
-		return "", fmt.Errorf("song id or URL is not valid: %w", err)
+		return Ref{}, fmt.Errorf("song id or URL is not valid: %w", err)
 	}
 	host := strings.ToLower(u.Hostname())
 	if host != "services.planningcenteronline.com" && !strings.HasSuffix(host, ".planningcenteronline.com") {
-		return "", fmt.Errorf("URL host %q is not a Planning Center Services song page", u.Hostname())
+		return Ref{}, fmt.Errorf("URL host %q is not a Planning Center Services page", u.Hostname())
 	}
-	path := strings.Trim(u.Path, "/")
-	parts := strings.Split(path, "/")
-	if len(parts) < 2 || parts[0] != "songs" || !isPositiveID(parts[1]) {
-		return "", fmt.Errorf("URL %q has no /songs/{id} path", s)
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	if len(parts) >= 2 && isPositiveID(parts[1]) {
+		switch parts[0] {
+		case "songs":
+			return Ref{Kind: RefSong, ID: parts[1]}, nil
+		case "plans":
+			return Ref{Kind: RefPlan, ID: parts[1]}, nil
+		}
 	}
-	return parts[1], nil
+	return Ref{}, fmt.Errorf("URL %q is not a song or plan page", s)
+}
+
+// ParseSongID accepts a Services song id or a song page URL.
+// An arrangement URL is accepted and the song id is taken from it.
+func ParseSongID(input string) (string, error) {
+	ref, err := ParseRef(input)
+	if err != nil {
+		return "", err
+	}
+	if ref.Kind != RefSong {
+		return "", fmt.Errorf("URL %q has no /songs/{id} path", strings.TrimSpace(input))
+	}
+	return ref.ID, nil
 }
 
 func isPositiveID(s string) bool {

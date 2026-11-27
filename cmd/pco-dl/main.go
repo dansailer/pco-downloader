@@ -26,16 +26,19 @@ func run(args []string) error {
 	fs.SetOutput(os.Stderr)
 	outDir := fs.String("o", "", "directory for saved files (default: Downloads in your home directory)")
 	fs.Usage = func() {
-		fmt.Fprintf(os.Stderr, `pco-dl lists the files on a Planning Center Services song and downloads the ones you select.
+		fmt.Fprintf(os.Stderr, `pco-dl lists the files on a Planning Center Services song or plan and downloads the ones you select.
 
 Usage:
-  pco-dl [flags] <song-url-or-id>
+  pco-dl [flags] <song-or-plan>
 
 Examples:
   pco-dl 31193598
   pco-dl https://services.planningcenteronline.com/songs/31193598
+  pco-dl https://services.planningcenteronline.com/plans/89693797
 
-The song id is enough. An arrangement URL is accepted too, and every arrangement of that song is listed.
+A number is a song id. An arrangement URL lists every arrangement of that song.
+A plan URL lists the arrangement selected on that plan, plus files stored on each song.
+A song scheduled twice is listed once. Items with no song are skipped.
 
 Authentication:
   Create a personal access token at
@@ -60,10 +63,10 @@ Flags:
 	}
 	if fs.NArg() != 1 {
 		fs.Usage()
-		return errors.New("give one song URL or song id")
+		return errors.New("give one song URL, song id, or plan URL")
 	}
 
-	songID, err := pco.ParseSongID(fs.Arg(0))
+	ref, err := pco.ParseRef(fs.Arg(0))
 	if err != nil {
 		return err
 	}
@@ -73,12 +76,12 @@ Flags:
 	}
 
 	client := pco.New(appID, secret)
-	song, files, err := client.FilesForSong(context.Background(), songID)
+	title, id, detail, empty, files, songColumn, err := loadFiles(client, ref)
 	if err != nil {
 		return err
 	}
 	if len(files) == 0 {
-		fmt.Printf("%s (%s)\n\nNo files are attached to this song or its arrangements.\n", song.Title, song.ID)
+		fmt.Printf("%s (%s)\n\n%s\n", title, id, empty)
 		return nil
 	}
 
@@ -90,7 +93,7 @@ Flags:
 		}
 	}
 
-	if err := printFiles(os.Stdout, song, files); err != nil {
+	if err := printFiles(os.Stdout, title, id, detail, files, songColumn); err != nil {
 		return err
 	}
 	fmt.Fprintln(os.Stderr)
@@ -118,7 +121,7 @@ Flags:
 			fmt.Printf("link only: %s\n  %s\n", f.Label(), f.Link)
 			continue
 		}
-		dest, err := pco.DestPath(destRoot, song.Title, f)
+		dest, err := pco.DestPath(destRoot, songName(f, title), f)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %s\n", f.Label(), err)
 			failed++
@@ -190,12 +193,39 @@ func downloadsDir(home string) (string, error) {
 	return dir, nil
 }
 
-func printFiles(w io.Writer, song pco.Song, files []pco.File) error {
-	if _, err := fmt.Fprintf(w, "%s (%s)\n", song.Title, song.ID); err != nil {
+func loadFiles(client *pco.Client, ref pco.Ref) (title, id, detail, empty string, files []pco.File, songColumn bool, err error) {
+	ctx := context.Background()
+	switch ref.Kind {
+	case pco.RefPlan:
+		var plan pco.Plan
+		plan, files, err = client.FilesForPlan(ctx, ref.ID)
+		if err != nil {
+			return "", "", "", "", nil, false, err
+		}
+		return plan.Title, plan.ID, plan.Dates, "No files are attached to the songs on this plan.", files, true, nil
+	default:
+		var song pco.Song
+		song, files, err = client.FilesForSong(ctx, ref.ID)
+		if err != nil {
+			return "", "", "", "", nil, false, err
+		}
+		return song.Title, song.ID, song.Author, "No files are attached to this song or its arrangements.", files, false, nil
+	}
+}
+
+func songName(f pco.File, fallback string) string {
+	if f.SongTitle != "" {
+		return f.SongTitle
+	}
+	return fallback
+}
+
+func printFiles(w io.Writer, title, id, detail string, files []pco.File, songColumn bool) error {
+	if _, err := fmt.Fprintf(w, "%s (%s)\n", title, id); err != nil {
 		return err
 	}
-	if song.Author != "" {
-		if _, err := fmt.Fprintln(w, song.Author); err != nil {
+	if detail != "" {
+		if _, err := fmt.Fprintln(w, detail); err != nil {
 			return err
 		}
 	}
@@ -203,13 +233,23 @@ func printFiles(w io.Writer, song pco.Song, files []pco.File) error {
 		return err
 	}
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	if _, err := fmt.Fprintln(tw, "#\tAccess\tArrangement\tKey\tName\tSize"); err != nil {
+	header := "#\tAccess\tArrangement\tKey\tName\tSize"
+	if songColumn {
+		header = "#\tSong\tAccess\tArrangement\tKey\tName\tSize"
+	}
+	if _, err := fmt.Fprintln(tw, header); err != nil {
 		return err
 	}
 	for i, f := range files {
 		key := f.Key
 		if key == "" {
 			key = "—"
+		}
+		if songColumn {
+			if _, err := fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\t%s\t%s\n", i+1, f.SongTitle, f.Access(), f.Arrangement, key, f.Label(), formatSize(f.Bytes)); err != nil {
+				return err
+			}
+			continue
 		}
 		if _, err := fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\t%s\n", i+1, f.Access(), f.Arrangement, key, f.Label(), formatSize(f.Bytes)); err != nil {
 			return err
