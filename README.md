@@ -71,7 +71,7 @@ mise run lint
 mise run build
 ```
 
-`mise run updates` checks the pinned GitHub Actions. A release has to be seven days old before that check asks for it. Dependabot runs daily and opens one grouped pull request per ecosystem once that wait is over.
+`mise run updates` checks the pinned GitHub Actions. A release has to be seven days old before that check asks for it. You apply dependency updates yourself. GitHub still reports known vulnerabilities, and it does not open a pull request for them.
 
 ## Release
 

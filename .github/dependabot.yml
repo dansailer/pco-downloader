@@ -9,6 +9,7 @@ updates:
       semver-major-days: 14
       semver-minor-days: 7
       semver-patch-days: 7
+    open-pull-requests-limit: 0
     groups:
       go:
         patterns:
@@ -19,6 +20,7 @@ updates:
       interval: daily
     cooldown:
       default-days: 7
+    open-pull-requests-limit: 0
     groups:
       actions:
         patterns:
