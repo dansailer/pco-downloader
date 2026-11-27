@@ -1,0 +1,12 @@
+/bin/
+/dist/
+/downloads/
+*.exe
+*.test
+*.out
+*.part
+.env
+.env.*
+credentials
+.DS_Store
+*.pem

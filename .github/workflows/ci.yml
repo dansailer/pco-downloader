@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      CGO_ENABLED: "0"
+      GOTELEMETRY: "off"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install tools
+        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: "2026.11.14"
+          cache: false
+
+      - name: Test
+        run: mise run test
+
+      - name: Lint
+        run: mise run lint
+
+      - name: Vulnerabilities
+        run: mise run vuln
+
+      - name: Action updates
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: mise run updates

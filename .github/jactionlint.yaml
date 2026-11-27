@@ -1,0 +1,7 @@
+update:
+  cooldown-days: 7
+  freeze: true
+  exclude-prereleases: true
+  include-tags: "v*"
+  exclude-tags:
+    - "*-{alpha,beta,rc}*"
