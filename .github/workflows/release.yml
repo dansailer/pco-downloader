@@ -104,7 +104,10 @@ jobs:
             cd dist
             sha256sum -- pco-dl_* > SHA256SUMS
           )
+          # No checkout in this job. Without --repo, gh looks the
+          # repository up with git and fails: "not a git repository".
           gh release create "${GITHUB_REF_NAME}" dist/* \
+            --repo "${GITHUB_REPOSITORY}" \
             --title "${GITHUB_REF_NAME}" \
             --generate-notes \
             --verify-tag
